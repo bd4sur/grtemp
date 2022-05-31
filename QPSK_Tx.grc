@@ -1,0 +1,344 @@
+options:
+  parameters:
+    author: ''
+    category: Custom
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: QPSK_Tx
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: ''
+    window_size: 2000,2000
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8.0]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: qpsk
+  id: variable_constellation_rect
+  parameters:
+    comment: ''
+    const_points: '[0.707+0.707j, -0.707+0.707j, -0.707-0.707j, 0.707-0.707j]'
+    imag_sect: '2'
+    precision: '8'
+    real_sect: '2'
+    rot_sym: '4'
+    soft_dec_lut: None
+    sym_map: symbol_map
+    w_imag_sect: '1'
+    w_real_sect: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 24.0]
+    rotation: 0
+    state: enabled
+- name: symbol_map
+  id: variable
+  parameters:
+    comment: ''
+    value: '[0,1,2,3]'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [240, 8.0]
+    rotation: 0
+    state: enabled
+- name: tx_gain
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 0,0,1,1
+    label: ''
+    min_len: '200'
+    orient: Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '1'
+    stop: '50'
+    value: '50'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 212.0]
+    rotation: 0
+    state: true
+- name: analog_random_source_x_0
+  id: analog_random_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    max: '256'
+    maxoutbuf: '0'
+    min: '0'
+    minoutbuf: '0'
+    num_samps: '1000'
+    repeat: 'True'
+    type: byte
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 228.0]
+    rotation: 0
+    state: true
+- name: blocks_file_source_0
+  id: blocks_file_source
+  parameters:
+    affinity: ''
+    alias: ''
+    begin_tag: pmt.PMT_NIL
+    comment: ''
+    file: /home/bd4sur/in.txt
+    length: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    repeat: 'False'
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 100.0]
+    rotation: 0
+    state: disabled
+- name: blocks_pdu_to_tagged_stream_0
+  id: blocks_pdu_to_tagged_stream
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    tag: packet_len
+    type: byte
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 224.0]
+    rotation: 180
+    state: disabled
+- name: blocks_vector_source_x_0
+  id: blocks_vector_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    repeat: 'True'
+    tags: '[]'
+    type: byte
+    vector: range(0,256)
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 340.0]
+    rotation: 0
+    state: disabled
+- name: digital_constellation_modulator_0
+  id: digital_constellation_modulator
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    constellation: qpsk
+    differential: 'True'
+    excess_bw: '0.35'
+    log: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_symbol: '16'
+    verbose: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 308.0]
+    rotation: 0
+    state: enabled
+- name: digital_crc32_async_bb_1
+  id: digital_crc32_async_bb
+  parameters:
+    affinity: ''
+    alias: ''
+    check: 'False'
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 136.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\nimport\
+      \ asyncio\nimport time\nimport random\n\n\n\nclass blk(gr.sync_block):\n\n \
+      \   def __init__(self, interval=0.5, repeat_times=10):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name = 'File to PDU',\n            in_sig =\
+      \ [np.uint8],\n            out_sig = None\n        )\n        self.interval\
+      \ = interval\n        if repeat_times < 1: repeat_times = 1\n        self.repeat_times\
+      \ = repeat_times\n\n        self.message_port_register_out(pmt.intern(\"message_out\"\
+      ))\n        self.output_message = None\n\n    async def delay(self, time):\n\
+      \        await asyncio.sleep(time)\n\n    async def timer(self, time, func):\n\
+      \        #while True:\n        future = asyncio.ensure_future(self.delay(time))\n\
+      \        await future\n        future.add_done_callback(func)\n        self.repeat_times\
+      \ -= 1\n        if(self.repeat_times > 0):\n            await self.timer(time,\
+      \ func)\n\n    def func(self, future):\n        print(\"PDU Strobe\")\n    \
+      \    self.message_port_pub(pmt.intern(\"message_out\"), self.output_message)\n\
+      \n    def work(self, input_items, output_items):\n        file_array = input_items[0]\n\
+      \        # header_array = np.array([66, 68, 52, 83, 85, 82])\n        output_array\
+      \ = file_array # np.append(header_array, file_array)\n        output_list =\
+      \ output_array.tolist()\n        self.output_message = pmt.cons(pmt.PMT_NIL,\
+      \ pmt.init_u8vector(len(output_list), (output_list)))\n        # self.message_port_pub(pmt.intern(\"\
+      message_out\"), output_message)\n        \n        asyncio.run(self.timer(self.interval,\
+      \ self.func))\n\n        return len(input_items[0])\n\n\n\n\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    interval: '0.5'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    repeat_times: '50'
+  states:
+    _io_cache: ('File to PDU', 'blk', [('interval', '0.5'), ('repeat_times', '10')],
+      [('0', 'byte', 1)], [('message_out', 'message', 1)], '', ['interval', 'repeat_times'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [240, 128.0]
+    rotation: 0
+    state: disabled
+- name: import_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import numpy
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [152, 24.0]
+    rotation: 0
+    state: enabled
+- name: kc_sdr_transmitter_0
+  id: kc_sdr_transmitter
+  parameters:
+    affinity: ''
+    alias: ''
+    att: '0'
+    bandwidth: int(2e6)
+    cent_freq: int(439e6)
+    comment: ''
+    ifgain: tx_gain
+    port: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 300.0]
+    rotation: 0
+    state: disabled
+- name: packet_format_gr38
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Block\n\"\"\"\n\nimport numpy as np\nfrom\
+      \ gnuradio import gr\nimport pmt\nimport array\nclass blk(gr.sync_block):\n\
+      \    \"\"\"Packet Format\"\"\"\n\n    def __init__(self):\n        gr.sync_block.__init__(self,\n\
+      \            name = \"Packet Format GR38\",\n            in_sig = None,\n  \
+      \          out_sig = None)\n        self.message_port_register_in(pmt.intern('PDU_in'))\n\
+      \        self.message_port_register_out(pmt.intern('PDU_out0'))\n        self.set_msg_handler(pmt.intern('PDU_in'),\
+      \ self.handle_msg)\n\n    def handle_msg(self, msg):\n        inMsg = pmt.to_python\
+      \ (msg)\n        pld = inMsg[1] ## type-> numpy.ndarray\n        mLen = len(pld)\n\
+      \        if (mLen > 0):\n            ## create a numpy array of type 'int' with\
+      \ preamble and sync word\n            tmp_char_list = np.array([85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,85,225,90,232,147],dtype=int)\n\
+      \            ## append length 2x\n            tmp_char_list=np.append(tmp_char_list,(mLen\
+      \ >> 8))\n            tmp_char_list=np.append(tmp_char_list,(mLen & 255))\n\
+      \            tmp_char_list=np.append(tmp_char_list,(mLen >> 8))\n          \
+      \  tmp_char_list=np.append(tmp_char_list,(mLen & 255))\n            tmp_char_list_len=len(tmp_char_list)\n\
+      \            ## append original payload\n            new_char_list=np.insert(tmp_char_list,tmp_char_list_len,pld)\n\
+      \            new_char_list_len=len(new_char_list)\n            ## save final\
+      \ numpy array as byte array (requires 'import array')\n            byte_array_new_char_list=array.array('B',new_char_list)\n\
+      \            new_bytes_out_len = len(byte_array_new_char_list)\n           \
+      \ ## create PMT u8vector using byte array\n            new_out_bytes_pmt=pmt.cons(pmt.PMT_NIL,pmt.init_u8vector(new_bytes_out_len,(byte_array_new_char_list)))\n\
+      \            self.message_port_pub(pmt.intern('PDU_out0'), new_out_bytes_pmt)\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Packet Format GR38', 'blk', [], [('PDU_in', 'message', 1)], [('PDU_out0',
+      'message', 1)], 'Packet Format', [])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 232.0]
+    rotation: 180
+    state: true
+- name: zeromq_pub_sink_0
+  id: zeromq_pub_sink
+  parameters:
+    address: tcp://127.0.0.1:49203
+    affinity: ''
+    alias: ''
+    comment: USRP sample rate = 768kHz
+    hwm: '-1'
+    pass_tags: 'False'
+    timeout: '100'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 428.0]
+    rotation: 0
+    state: true
+
+connections:
+- [analog_random_source_x_0, '0', digital_constellation_modulator_0, '0']
+- [blocks_file_source_0, '0', epy_block_0, '0']
+- [blocks_pdu_to_tagged_stream_0, '0', digital_constellation_modulator_0, '0']
+- [blocks_vector_source_x_0, '0', digital_constellation_modulator_0, '0']
+- [digital_constellation_modulator_0, '0', kc_sdr_transmitter_0, '0']
+- [digital_constellation_modulator_0, '0', zeromq_pub_sink_0, '0']
+- [digital_crc32_async_bb_1, out, packet_format_gr38, PDU_in]
+- [epy_block_0, message_out, digital_crc32_async_bb_1, in]
+- [packet_format_gr38, PDU_out0, blocks_pdu_to_tagged_stream_0, pdus]
+
+metadata:
+  file_format: 1
