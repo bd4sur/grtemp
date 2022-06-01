@@ -49,7 +49,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 24.0]
+    coordinate: [8, 232.0]
     rotation: 0
     state: enabled
 - name: symbol_map
@@ -82,27 +82,23 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 212.0]
+    coordinate: [8, 420.0]
     rotation: 0
-    state: true
-- name: analog_random_source_x_0
-  id: analog_random_source_x
+    state: enabled
+- name: blocks_complex_to_float_0
+  id: blocks_complex_to_float
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    max: '256'
     maxoutbuf: '0'
-    min: '0'
     minoutbuf: '0'
-    num_samps: '1000'
-    repeat: 'True'
-    type: byte
+    vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [16, 228.0]
+    coordinate: [440, 256.0]
     rotation: 0
     state: true
 - name: blocks_file_source_0
@@ -110,9 +106,10 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    begin_tag: pmt.PMT_NIL
+    begin_tag: pmt.intern("file_begin")
     comment: ''
-    file: /home/bd4sur/in.txt
+    file: "/home/bd4sur/_Audio/01 - \u7D76\u5BFE\u30AB\u30E9\u30D5\u30EB\u5BA3\u8A00\
+      .wav"
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
@@ -124,9 +121,25 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 100.0]
+    coordinate: [8, 84.0]
     rotation: 0
-    state: disabled
+    state: enabled
+- name: blocks_float_to_complex_0
+  id: blocks_float_to_complex
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [664, 256.0]
+    rotation: 0
+    state: true
 - name: blocks_pdu_to_tagged_stream_0
   id: blocks_pdu_to_tagged_stream
   parameters:
@@ -141,29 +154,28 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 224.0]
+    coordinate: [232, 176.0]
     rotation: 180
-    state: disabled
-- name: blocks_vector_source_x_0
-  id: blocks_vector_source_x
+    state: enabled
+- name: blocks_throttle_0
+  id: blocks_throttle
   parameters:
     affinity: ''
     alias: ''
     comment: ''
+    ignoretag: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
-    repeat: 'True'
-    tags: '[]'
+    samples_per_second: '48000'
     type: byte
-    vector: range(0,256)
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 340.0]
+    coordinate: [232, 120.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: digital_constellation_modulator_0
   id: digital_constellation_modulator
   parameters:
@@ -182,7 +194,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 308.0]
+    coordinate: [232, 236.0]
     rotation: 0
     state: enabled
 - name: digital_crc32_async_bb_1
@@ -198,49 +210,40 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [488, 136.0]
+    coordinate: [640, 120.0]
     rotation: 0
     state: enabled
 - name: epy_block_0
   id: epy_block
   parameters:
     _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\nimport\
-      \ asyncio\nimport time\nimport random\n\n\n\nclass blk(gr.sync_block):\n\n \
-      \   def __init__(self, interval=0.5, repeat_times=10):\n        gr.sync_block.__init__(\n\
-      \            self,\n            name = 'File to PDU',\n            in_sig =\
-      \ [np.uint8],\n            out_sig = None\n        )\n        self.interval\
-      \ = interval\n        if repeat_times < 1: repeat_times = 1\n        self.repeat_times\
-      \ = repeat_times\n\n        self.message_port_register_out(pmt.intern(\"message_out\"\
-      ))\n        self.output_message = None\n\n    async def delay(self, time):\n\
-      \        await asyncio.sleep(time)\n\n    async def timer(self, time, func):\n\
-      \        #while True:\n        future = asyncio.ensure_future(self.delay(time))\n\
-      \        await future\n        future.add_done_callback(func)\n        self.repeat_times\
-      \ -= 1\n        if(self.repeat_times > 0):\n            await self.timer(time,\
-      \ func)\n\n    def func(self, future):\n        print(\"PDU Strobe\")\n    \
-      \    self.message_port_pub(pmt.intern(\"message_out\"), self.output_message)\n\
-      \n    def work(self, input_items, output_items):\n        file_array = input_items[0]\n\
-      \        # header_array = np.array([66, 68, 52, 83, 85, 82])\n        output_array\
-      \ = file_array # np.append(header_array, file_array)\n        output_list =\
-      \ output_array.tolist()\n        self.output_message = pmt.cons(pmt.PMT_NIL,\
-      \ pmt.init_u8vector(len(output_list), (output_list)))\n        # self.message_port_pub(pmt.intern(\"\
-      message_out\"), output_message)\n        \n        asyncio.run(self.timer(self.interval,\
-      \ self.func))\n\n        return len(input_items[0])\n\n\n\n\n"
+      \ math\n\nclass blk(gr.sync_block):\n\n    def __init__(self, frame_length=1024):\n\
+      \        gr.sync_block.__init__(\n            self,\n            name = 'File\
+      \ to PDU',\n            in_sig = [np.uint8],\n            out_sig = None\n \
+      \       )\n        self.frame_length = frame_length\n        self.message_port_register_out(pmt.intern(\"\
+      message_out\"))\n\n    def work(self, input_items, output_items):\n        input_buf\
+      \ = np.copy(input_items[0])\n        frame_count = math.ceil(len(input_buf)\
+      \ / self.frame_length)\n\n        for i in range(frame_count):\n           \
+      \ frame = input_buf[i * self.frame_length : (i+1) * self.frame_length]\n   \
+      \         output_list = frame.tolist()\n            output_message = pmt.cons(pmt.PMT_NIL,\
+      \ pmt.init_u8vector(len(output_list), (output_list)))\n            self.message_port_pub(pmt.intern(\"\
+      message_out\"), output_message)\n\n        return len(input_items[0])\n\n\n\n\
+      \n"
     affinity: ''
     alias: ''
     comment: ''
-    interval: '0.5'
+    frame_length: '1024'
     maxoutbuf: '0'
     minoutbuf: '0'
-    repeat_times: '50'
   states:
-    _io_cache: ('File to PDU', 'blk', [('interval', '0.5'), ('repeat_times', '10')],
-      [('0', 'byte', 1)], [('message_out', 'message', 1)], '', ['interval', 'repeat_times'])
+    _io_cache: ('File to PDU', 'blk', [('frame_length', '1024')], [('0', 'byte', 1)],
+      [('message_out', 'message', 1)], '', ['frame_length'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [240, 128.0]
+    coordinate: [384, 120.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: import_0
   id: import
   parameters:
@@ -269,9 +272,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [496, 300.0]
+    coordinate: [832, 228.0]
     rotation: 0
-    state: disabled
+    state: enabled
 - name: packet_format_gr38
   id: epy_block
   parameters:
@@ -306,7 +309,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [480, 232.0]
+    coordinate: [632, 184.0]
     rotation: 180
     state: true
 - name: zeromq_pub_sink_0
@@ -325,17 +328,18 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [496, 428.0]
+    coordinate: [832, 364.0]
     rotation: 0
-    state: true
+    state: disabled
 
 connections:
-- [analog_random_source_x_0, '0', digital_constellation_modulator_0, '0']
-- [blocks_file_source_0, '0', epy_block_0, '0']
+- [blocks_complex_to_float_0, '0', blocks_float_to_complex_0, '1']
+- [blocks_complex_to_float_0, '1', blocks_float_to_complex_0, '0']
+- [blocks_file_source_0, '0', blocks_throttle_0, '0']
+- [blocks_float_to_complex_0, '0', kc_sdr_transmitter_0, '0']
 - [blocks_pdu_to_tagged_stream_0, '0', digital_constellation_modulator_0, '0']
-- [blocks_vector_source_x_0, '0', digital_constellation_modulator_0, '0']
-- [digital_constellation_modulator_0, '0', kc_sdr_transmitter_0, '0']
-- [digital_constellation_modulator_0, '0', zeromq_pub_sink_0, '0']
+- [blocks_throttle_0, '0', epy_block_0, '0']
+- [digital_constellation_modulator_0, '0', blocks_complex_to_float_0, '0']
 - [digital_crc32_async_bb_1, out, packet_format_gr38, PDU_in]
 - [epy_block_0, message_out, digital_crc32_async_bb_1, in]
 - [packet_format_gr38, PDU_out0, blocks_pdu_to_tagged_stream_0, pdus]
