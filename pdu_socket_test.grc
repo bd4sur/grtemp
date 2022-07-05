@@ -1,0 +1,174 @@
+options:
+  parameters:
+    author: ''
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: pdu_socket_test
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: pdu_socket_test
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_0
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.PMT_NIL, pmt.init_u8vector(11, ([72, 101, 108, 108, 111, 32,
+      65, 113, 117, 97, 33])))
+    period: '500'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [224, 160.0]
+    rotation: 0
+    state: true
+- name: blocks_socket_pdu_0
+  id: blocks_socket_pdu
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    host: 192.168.10.150
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mtu: '10000'
+    port: '9001'
+    tcp_no_delay: 'False'
+    type: TCP_SERVER
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [208, 324.0]
+    rotation: 0
+    state: true
+- name: blocks_socket_pdu_1
+  id: blocks_socket_pdu
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    host: 192.168.10.20
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mtu: '10000'
+    port: '9000'
+    tcp_no_delay: 'False'
+    type: TCP_CLIENT
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [776, 140.0]
+    rotation: 0
+    state: true
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\nimport\
+      \ array\nclass blk(gr.sync_block):\n    \"\"\"packet_probe\"\"\"\n\n    def\
+      \ __init__(self):\n        gr.sync_block.__init__(self,\n            name =\
+      \ \"packet_probe\",\n            in_sig = None,\n            out_sig = None)\n\
+      \        self.message_port_register_in(pmt.intern('PDU_in'))\n        self.message_port_register_out(pmt.intern('PDU_out0'))\n\
+      \        self.set_msg_handler(pmt.intern('PDU_in'), self.handle_msg)\n\n   \
+      \ def handle_msg(self, msg):\n        pld = pmt.to_python(pmt.cdr(msg)) # numpy.ndarray\n\
+      \        print(f\"GR 9001 Received MP3 bytes: {pld.tobytes()}\")\n\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('packet_probe', 'blk', [], [('PDU_in', 'message', 1)], [('PDU_out0',
+      'message', 1)], 'packet_probe', [])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [448, 360.0]
+    rotation: 0
+    state: true
+- name: epy_block_0_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\nimport\
+      \ array\nimport random\nimport math\n\ndef to_bytes(samples):\n    bytes = []\n\
+      \    for i in range(len(samples)):\n        fvalue = samples[i]\n        i16value\
+      \ = int((fvalue + 1) * 32768)\n        msb = ((i16value >> 8) & 255)\n     \
+      \   lsb = (i16value & 255)\n        bytes.append(msb)\n        bytes.append(lsb)\n\
+      \    return bytes\n\nclass blk(gr.sync_block):\n    \"\"\"pdu_builder\"\"\"\n\
+      \n    def __init__(self, message=\"Hello Aqua! Please encode me!\"):\n     \
+      \   gr.sync_block.__init__(self,\n            name = \"pdu_builder\",\n    \
+      \        in_sig = None,\n            out_sig = None)\n        self.message =\
+      \ message\n        self.message_port_register_in(pmt.intern('pdu_trigger'))\n\
+      \        self.message_port_register_out(pmt.intern('pdu_out'))\n        self.set_msg_handler(pmt.intern('pdu_trigger'),\
+      \ self.handle_msg_trigger)\n\n    def handle_msg_trigger(self, msg):\n     \
+      \   print(f\"GR 9000 Send PCM to Aqua\")\n        msg_body = list(bytearray(self.message,\
+      \ \"utf-8\"))\n\n        samples = []\n        for i in range(1152 * 100):\n\
+      \            samples.append(math.sin(i / 10))\n\n        msg_body = to_bytes(samples)\n\
+      \n        output_msg = pmt.cons(pmt.PMT_NIL, pmt.init_u8vector(len(msg_body),\
+      \ (msg_body)))\n        self.message_port_pub(pmt.intern(\"pdu_out\"), output_msg)\n\
+      \n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    message: '''I\'' m GR, This is PCM stream, Please encode me!'''
+    minoutbuf: '0'
+  states:
+    _io_cache: ('pdu_builder', 'blk', [('message', "'Hello Aqua! Please encode me!'")],
+      [('pdu_trigger', 'message', 1)], [('pdu_out', 'message', 1)], 'pdu_builder',
+      ['message'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [504, 168.0]
+    rotation: 0
+    state: true
+
+connections:
+- [blocks_message_strobe_0, strobe, epy_block_0_0, pdu_trigger]
+- [blocks_socket_pdu_0, pdus, epy_block_0, PDU_in]
+- [epy_block_0_0, pdu_out, blocks_socket_pdu_1, pdus]
+
+metadata:
+  file_format: 1
